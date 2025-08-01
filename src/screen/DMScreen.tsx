@@ -1,5 +1,9 @@
-import React, { Component } from "react";
-import { Widget } from "../component/widget/Widget";
+import React, { Component, type JSX } from "react";
+import {
+  Widget,
+  type WidgetProps,
+  type WidgetState,
+} from "../component/widget/Widget";
 import { EmptyWidget } from "../component/widget/implementation/EmptyWidget";
 
 interface DMScreenProps {
@@ -10,27 +14,30 @@ interface DMScreenProps {
 interface DMScreenState {
   columns: number;
   rows: number;
-  widgets: Widget[][];
+  widgets: JSX.Element[][];
 }
 
 export class DMScreen extends Component<DMScreenProps, DMScreenState> {
   public constructor(props: DMScreenProps) {
     super(props);
 
-    const widgets: Widget[][] = [];
+    const widgets: JSX.Element[][] = [];
 
     for (let y = 0; y < this.props.rows; y++) {
-      const row: Widget[] = Array(this.props.columns);
+      const row: JSX.Element[] = [];
       for (let x = 0; x < this.props.columns; x++) {
-        row[x] = new EmptyWidget({
-          id: Date.now.toString(),
-          x,
-          y,
-          width: 1,
-          height: 1,
-        });
+        row.push(
+          <EmptyWidget
+            key={`${x},${y}`}
+            id={Date.now().toString() + x + y}
+            x={x}
+            y={y}
+            width={1}
+            height={1}
+          />
+        );
       }
-      widgets[y] = row;
+      widgets.push(row);
     }
 
     this.state = { columns: props.columns, rows: props.rows, widgets };
@@ -39,7 +46,7 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
   renderGrid(): React.ReactNode {
     return this.state.widgets.flat().map((widget, index) => (
       <div key={index} className="bg-gray-700 p-2 rounded shadow text-center">
-        {widget.render()}
+        {widget}
       </div>
     ));
   }

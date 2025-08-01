@@ -1,24 +1,16 @@
 import React from "react";
 
-export abstract class Widget extends React.Component {
+export type WidgetProps = {
   id: string;
   x: number;
   y: number;
   width: number;
   height: number;
+};
 
-  public constructor(props: {
-    id: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }) {
-    super(props);
-    this.id = props.id;
-    this.x = props.x;
-    this.y = props.y;
-    this.width = props.width;
-    this.height = props.height;
-  }
-}
+export type WidgetState = WidgetProps & {};
+
+export abstract class Widget<
+  PROPS extends WidgetProps,
+  STATE extends WidgetState
+> extends React.Component<PROPS, STATE> {}
