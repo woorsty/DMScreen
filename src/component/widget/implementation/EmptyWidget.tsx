@@ -11,10 +11,9 @@ export class EmptyWidget extends Widget<EmptyWidgetProps, EmptyWidgetState> {
 
   onClick() {
     console.log("test" + this.state.x + this.state.y);
-    this.setState({ x: this.state.x + 1 });
   }
 
   render() {
-    return <button onClick={() => this.onClick()}>+ {this.state.x}</button>;
+    return <button onClick={() => this.onClick()}>+</button>;
   }
 }
