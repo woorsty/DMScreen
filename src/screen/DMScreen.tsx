@@ -30,9 +30,9 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
 
   createWidgets(columns: number, rows: number): JSX.Element[][] {
     const widgets: JSX.Element[][] = [];
-    for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < rows; x++) {
       const row: JSX.Element[] = [];
-      for (let x = 0; x < columns; x++) {
+      for (let y = 0; y < columns; y++) {
         row.push(
           <EmptyWidget
             key={`${x},${y}`}
@@ -41,16 +41,31 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
             y={y}
             width={1}
             height={1}
+            onReplaceWidget={this.onReplaceWidget}
           />
         );
       }
       widgets.push(row);
     }
     widgets[0][0] = (
-      <InitiativeWidget id={""} x={0} y={0} width={1} height={1} />
+      <InitiativeWidget
+        id={""}
+        x={0}
+        y={0}
+        width={1}
+        height={1}
+        onReplaceWidget={this.onReplaceWidget}
+        removable={true}
+      />
     );
     return widgets;
   }
+
+  onReplaceWidget = (x: number, y: number, widget: JSX.Element) => {
+    const widgets = this.state.widgets.slice();
+    widgets[x][y] = widget;
+    this.setState({ widgets });
+  };
 
   handleGridChange = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -50,7 +50,7 @@ export class InitiativeWidget extends Widget<
     });
   };
 
-  handleRemove = (idx: number) => {
+  removeCharacter = (idx: number) => {
     const characters = this.state.characters.filter((_, i) => i !== idx);
     let currentIndex = this.state.currentIndex;
     if (currentIndex >= characters.length) currentIndex = 0;
@@ -64,7 +64,7 @@ export class InitiativeWidget extends Widget<
     }));
   };
 
-  render() {
+  renderContent = () => {
     const {
       characters,
       nameInput,
@@ -175,7 +175,7 @@ export class InitiativeWidget extends Widget<
                     <td className="px-2 py-1">
                       <button
                         className="text-red-400 hover:text-red-600"
-                        onClick={() => this.handleRemove(idx)}
+                        onClick={() => this.removeCharacter(idx)}
                         title="Entfernen"
                       >
                         ✕
@@ -196,5 +196,5 @@ export class InitiativeWidget extends Widget<
         </button>
       </div>
     );
-  }
+  };
 }
