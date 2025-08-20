@@ -35,7 +35,10 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
   public constructor(props: DMScreenProps) {
     super(props);
 
-    const { widgets, layout } = this.initWidgets(props.columns, props.rows);
+    const { widgets, layout } = this.fillWithEmptyWidgets(
+      props.columns,
+      props.rows
+    );
     this.state = {
       columns: props.columns,
       rows: props.rows,
@@ -60,29 +63,35 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
     this.updateContainerHeight();
   }
 
-  initWidgets(columns: number, rows: number) {
+  fillWithEmptyWidgets(columns: number, rows: number) {
     const widgets: WidgetData[] = [];
     const layout: any[] = [];
     for (let x = 0; x < columns; x++) {
       for (let y = 0; y < rows; y++) {
         const key = uuidv4();
-        widgets.push({
-          key,
-          x: x,
-          y: y,
-          width: 1,
-          height: 1,
-          component: (
-            <EmptyWidget
-              id={`${x},${y}`}
-              x={x}
-              y={y}
-              width={1}
-              height={1}
-              onReplaceWidget={this.onReplaceWidget}
-            />
-          ),
-        });
+        const existingWidget = this.state?.widgets && this.getWidget(x, y);
+
+        if (existingWidget) {
+          widgets.push(existingWidget);
+        } else {
+          widgets.push({
+            key,
+            x: x,
+            y: y,
+            width: 1,
+            height: 1,
+            component: (
+              <EmptyWidget
+                id={`${x},${y}`}
+                x={x}
+                y={y}
+                width={1}
+                height={1}
+                onReplaceWidget={this.onReplaceWidget}
+              />
+            ),
+          });
+        }
         layout.push({
           i: key,
           x: x,
@@ -145,7 +154,7 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
       rows > 0 &&
       (columns !== this.state.columns || rows !== this.state.rows)
     ) {
-      const { widgets, layout } = this.initWidgets(columns, rows);
+      const { widgets, layout } = this.fillWithEmptyWidgets(columns, rows);
       this.setState({
         columns,
         rows,
