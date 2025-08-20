@@ -3,6 +3,16 @@ import { EmptyWidget } from "../component/widget/implementation/EmptyWidget";
 import { InitiativeWidget } from "../component/widget/implementation/InitiativeWidget";
 import { DMScreenMenu } from "./menu/DMScreenMenu";
 import Gridlayout from "react-grid-layout";
+import { v4 as uuidv4 } from "uuid";
+
+interface WidgetData {
+  key: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  component: JSX.Element;
+}
 
 interface DMScreenProps {
   columns: number;
@@ -12,10 +22,11 @@ interface DMScreenProps {
 interface DMScreenState {
   columns: number;
   rows: number;
-  widgets: JSX.Element[][];
+  widgets: WidgetData[];
+  layout: any[];
   menuOpen: boolean;
   isEditMode: boolean;
-  containerHeight: number; // <--- NEU
+  containerHeight: number;
 }
 
 export class DMScreen extends Component<DMScreenProps, DMScreenState> {
@@ -24,14 +35,15 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
   public constructor(props: DMScreenProps) {
     super(props);
 
-    const widgets = this.initWidgets(props.columns, props.rows);
+    const { widgets, layout } = this.initWidgets(props.columns, props.rows);
     this.state = {
       columns: props.columns,
       rows: props.rows,
       widgets,
       menuOpen: false,
       isEditMode: false,
-      containerHeight: 0, // <--- NEU
+      containerHeight: 0,
+      layout,
     };
   }
 
@@ -48,45 +60,65 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
     this.updateContainerHeight();
   }
 
-  initWidgets(columns: number, rows: number): JSX.Element[][] {
-    const widgets: JSX.Element[][] = [];
-    for (let x = 0; x < rows; x++) {
-      const row: JSX.Element[] = [];
-      for (let y = 0; y < columns; y++) {
-        row.push(
-          <EmptyWidget
-            key={`${x},${y}`}
-            id={Date.now().toString() + x + y}
-            x={x}
-            y={y}
-            width={1}
-            height={1}
-            onReplaceWidget={this.onReplaceWidget}
-          />
-        );
+  initWidgets(columns: number, rows: number) {
+    const widgets: WidgetData[] = [];
+    const layout: any[] = [];
+    for (let x = 0; x < columns; x++) {
+      for (let y = 0; y < rows; y++) {
+        const key = uuidv4();
+        widgets.push({
+          key,
+          x: x,
+          y: y,
+          width: 1,
+          height: 1,
+          component: (
+            <EmptyWidget
+              id={`${x},${y}`}
+              x={x}
+              y={y}
+              width={1}
+              height={1}
+              onReplaceWidget={this.onReplaceWidget}
+            />
+          ),
+        });
+        layout.push({
+          i: key,
+          x: x,
+          y: y,
+          w: 1,
+          h: 1,
+        });
       }
-      widgets.push(row);
     }
-    widgets[0][0] = (
-      <InitiativeWidget
-        id={""}
-        x={0}
-        y={0}
-        width={1}
-        height={1}
-        onReplaceWidget={this.onReplaceWidget}
-        removable={true}
-      />
-    );
-    return widgets;
+    return { widgets, layout };
   }
 
   onReplaceWidget = (x: number, y: number, widget: JSX.Element) => {
-    const widgets = this.state.widgets.slice();
-    widgets[x] = widgets[x].slice();
-    widgets[x][y] = widget;
-    this.setState({ widgets });
+    this.setState((prevState) => {
+      const currentWidgets = prevState.widgets;
+      const currentWidget = this.getWidgetFromList(x, y, currentWidgets);
+
+      if (currentWidget) {
+        currentWidget.component = widget;
+      }
+
+      return { widgets: currentWidgets };
+    });
   };
+
+  getWidgetFromList(
+    x: number,
+    y: number,
+    widgets: WidgetData[]
+  ): WidgetData | undefined {
+    return widgets.find((widget) => widget.x === x && widget.y === y);
+  }
+
+  getWidget(x: number, y: number) {
+    return this.getWidgetFromList(x, y, this.state.widgets);
+  }
 
   toggleEditMode = () => {
     this.setState((prevState) => ({
@@ -113,11 +145,12 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
       rows > 0 &&
       (columns !== this.state.columns || rows !== this.state.rows)
     ) {
-      const widgets = this.initWidgets(columns, rows);
+      const { widgets, layout } = this.initWidgets(columns, rows);
       this.setState({
         columns,
         rows,
         widgets,
+        layout,
       });
     }
   };
@@ -133,22 +166,38 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
   };
 
   getRowHeight() {
-    if (!this.state.containerHeight) return 100; // Fallback
+    if (!this.state.containerHeight) return 100;
     return this.state.containerHeight / this.state.rows;
   }
 
-  renderGrid(): React.ReactNode {
-    const layout = this.state.widgets.flat().map((widget, idx) => {
-      const x = idx % this.state.columns;
-      const y = Math.floor(idx / this.state.columns);
-      return {
-        i: `${x},${y}`,
-        x,
-        y,
-        w: 1,
-        h: 1,
-      };
+  onLayoutChange = (newLayout: any[]) => {
+    let widgets = [...this.state.widgets];
+
+    newLayout.forEach((layoutItem) => {
+      const widget = widgets.find((w) => w.key === layoutItem.i);
+      if (widget) {
+        widget.x = layoutItem.x;
+        widget.y = layoutItem.y;
+        widget.width = layoutItem.w;
+        widget.height = layoutItem.h;
+      }
     });
+
+    this.setState({ widgets });
+  };
+
+  getLayoutFromWidgets(widgets: WidgetData[]) {
+    return widgets.map((w) => ({
+      i: w.key,
+      x: w.x,
+      y: w.y,
+      w: w.width,
+      h: w.height,
+    }));
+  }
+
+  renderGrid(): React.ReactNode {
+    const layout = this.getLayoutFromWidgets(this.state.widgets);
 
     return (
       <Gridlayout
@@ -156,26 +205,25 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
         cols={this.state.columns}
         rowHeight={this.getRowHeight()}
         width={window.screen.availWidth}
-        layout={layout}
         isDraggable={this.state.isEditMode}
         isResizable={this.state.isEditMode}
         style={{ height: "100%" }}
         margin={[0, 0]}
         containerPadding={[0, 0]}
+        layout={layout}
+        onLayoutChange={this.onLayoutChange}
+        preventCollision={true}
+        compactType={null}
       >
-        {this.state.widgets.flat().map((widget, idx) => {
-          const x = idx % this.state.columns;
-          const y = Math.floor(idx / this.state.columns);
-          return (
-            <div
-              key={`${x},${y}`}
-              className="border border-gray-700 h-full w-full bg-gray-700"
-              style={{ margin: 0, padding: 0 }}
-            >
-              {widget}
-            </div>
-          );
-        })}
+        {this.state.widgets.map((widget) => (
+          <div
+            key={widget.key}
+            className="border border-gray-700 h-full w-full bg-gray-700"
+            style={{ margin: 0, padding: 0 }}
+          >
+            {widget.component}
+          </div>
+        ))}
       </Gridlayout>
     );
   }

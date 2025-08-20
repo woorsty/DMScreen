@@ -55,7 +55,6 @@ export class DMScreenMenu extends React.Component<
               columns={this.props.columns}
               rows={this.props.rows}
             />
-            {/* Hier können weitere Menüpunkte ergänzt werden */}
           </div>
         )}
       </div>
