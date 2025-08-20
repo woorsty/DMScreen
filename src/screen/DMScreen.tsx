@@ -2,6 +2,7 @@ import React, { Component, type JSX } from "react";
 import { EmptyWidget } from "../component/widget/implementation/EmptyWidget";
 import { InitiativeWidget } from "../component/widget/implementation/InitiativeWidget";
 import { DMScreenMenu } from "./menu/DMScreenMenu";
+import Gridlayout from "react-grid-layout";
 
 interface DMScreenProps {
   columns: number;
@@ -13,22 +14,41 @@ interface DMScreenState {
   rows: number;
   widgets: JSX.Element[][];
   menuOpen: boolean;
+  isEditMode: boolean;
+  containerHeight: number; // <--- NEU
 }
 
 export class DMScreen extends Component<DMScreenProps, DMScreenState> {
+  gridContainerRef = React.createRef<HTMLDivElement>();
+
   public constructor(props: DMScreenProps) {
     super(props);
 
-    const widgets = this.createWidgets(props.columns, props.rows);
+    const widgets = this.initWidgets(props.columns, props.rows);
     this.state = {
       columns: props.columns,
       rows: props.rows,
       widgets,
       menuOpen: false,
+      isEditMode: false,
+      containerHeight: 0, // <--- NEU
     };
   }
 
-  createWidgets(columns: number, rows: number): JSX.Element[][] {
+  componentDidMount() {
+    this.updateContainerHeight();
+    window.addEventListener("resize", this.updateContainerHeight);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.updateContainerHeight);
+  }
+
+  componentDidUpdate(prevProps: DMScreenProps, prevState: DMScreenState) {
+    this.updateContainerHeight();
+  }
+
+  initWidgets(columns: number, rows: number): JSX.Element[][] {
     const widgets: JSX.Element[][] = [];
     for (let x = 0; x < rows; x++) {
       const row: JSX.Element[] = [];
@@ -63,8 +83,15 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
 
   onReplaceWidget = (x: number, y: number, widget: JSX.Element) => {
     const widgets = this.state.widgets.slice();
+    widgets[x] = widgets[x].slice();
     widgets[x][y] = widget;
     this.setState({ widgets });
+  };
+
+  toggleEditMode = () => {
+    this.setState((prevState) => ({
+      isEditMode: !prevState.isEditMode,
+    }));
   };
 
   handleGridChange = (e: React.FormEvent<HTMLFormElement>) => {
@@ -78,39 +105,99 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
       (form.elements.namedItem("rows") as HTMLInputElement).value,
       10
     );
-    if (columns > 0 && rows > 0) {
-      const widgets = this.createWidgets(columns, rows);
-      this.setState({ columns, rows, widgets });
+
+    if (
+      !isNaN(columns) &&
+      !isNaN(rows) &&
+      columns > 0 &&
+      rows > 0 &&
+      (columns !== this.state.columns || rows !== this.state.rows)
+    ) {
+      const widgets = this.initWidgets(columns, rows);
+      this.setState({
+        columns,
+        rows,
+        widgets,
+      });
     }
   };
 
+  updateContainerHeight = () => {
+    const container = this.gridContainerRef.current;
+    if (container) {
+      const height = container.clientHeight;
+      if (height !== this.state.containerHeight) {
+        this.setState({ containerHeight: height });
+      }
+    }
+  };
+
+  getRowHeight() {
+    if (!this.state.containerHeight) return 100; // Fallback
+    return this.state.containerHeight / this.state.rows;
+  }
+
   renderGrid(): React.ReactNode {
-    return this.state.widgets.flat().map((widget, index) => (
-      <div key={index} className="bg-gray-700 p-2 rounded shadow text-center">
-        {widget}
-      </div>
-    ));
+    const layout = this.state.widgets.flat().map((widget, idx) => {
+      const x = idx % this.state.columns;
+      const y = Math.floor(idx / this.state.columns);
+      return {
+        i: `${x},${y}`,
+        x,
+        y,
+        w: 1,
+        h: 1,
+      };
+    });
+
+    return (
+      <Gridlayout
+        className="layout"
+        cols={this.state.columns}
+        rowHeight={this.getRowHeight()}
+        width={window.screen.availWidth}
+        layout={layout}
+        isDraggable={this.state.isEditMode}
+        isResizable={this.state.isEditMode}
+        style={{ height: "100%" }}
+        margin={[0, 0]}
+        containerPadding={[0, 0]}
+      >
+        {this.state.widgets.flat().map((widget, idx) => {
+          const x = idx % this.state.columns;
+          const y = Math.floor(idx / this.state.columns);
+          return (
+            <div
+              key={`${x},${y}`}
+              className="border border-gray-700 h-full w-full bg-gray-700"
+              style={{ margin: 0, padding: 0 }}
+            >
+              {widget}
+            </div>
+          );
+        })}
+      </Gridlayout>
+    );
   }
 
   render() {
     return (
       <div className="flex flex-col h-screen w-screen bg-gray-900 text-white">
-        <header className="p-4 bg-gray-800 shadow-md flex items-center justify-between">
+        <header className="bg-gray-800 shadow-md flex items-center justify-between">
           <h1 className="text-3xl font-bold">DM Screen</h1>
           <DMScreenMenu
             handleGridChange={this.handleGridChange}
+            toggleEditMode={this.toggleEditMode}
             columns={this.state.columns}
             rows={this.state.rows}
+            isEditMode={this.state.isEditMode}
           />
         </header>
-
-        <main className="flex flex-1 p-4 flex-col gap-4">
+        <main className="flex-1 flex flex-col min-h-0">
           <div
-            className="flex-1 grid gap-2"
-            style={{
-              gridTemplateColumns: `repeat(${this.state.columns}, 1fr)`,
-              gridTemplateRows: `repeat(${this.state.rows}, 1fr)`,
-            }}
+            ref={this.gridContainerRef}
+            className="flex-1 min-h-0"
+            style={{ height: "100%" }}
           >
             {this.renderGrid()}
           </div>

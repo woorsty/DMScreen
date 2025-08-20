@@ -8,16 +8,14 @@ type EmptyWidgetProps = WidgetProps & {
 type EmptyWidgetState = WidgetState & { showMenu?: boolean };
 
 export class EmptyWidget extends Widget<EmptyWidgetProps, EmptyWidgetState> {
+  static defaultProps = {
+    width: 1,
+    height: 1,
+    removable: false,
+  };
+
   public constructor(props: EmptyWidgetProps) {
-    super({
-      height: props.height,
-      width: props.height,
-      id: props.id,
-      x: props.x,
-      y: props.y,
-      onReplaceWidget: props.onReplaceWidget,
-      removable: false,
-    });
+    super(props);
     this.state = { ...props, showMenu: false };
   }
 
@@ -48,7 +46,7 @@ export class EmptyWidget extends Widget<EmptyWidgetProps, EmptyWidgetState> {
   renderContent = () => {
     if (this.state.showMenu) {
       return (
-        <div className="bg-gray-800 p-2 rounded shadow flex flex-col gap-2">
+        <div className="bg-gray-800 p-2 rounded shadow flex flex-col gap-2 h-full w-full">
           {WidgetRegistry.map((w) => (
             <button
               key={w.type}

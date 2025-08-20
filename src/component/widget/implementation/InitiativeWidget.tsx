@@ -74,7 +74,7 @@ export class InitiativeWidget extends Widget<
       currentIndex,
     } = this.state;
     return (
-      <div className="bg-gray-800 p-2 rounded mx-auto">
+      <div className="bg-gray-800 p-2 rounded w-full h-full flex flex-col">
         <div className="mb-2 flex gap-1">
           <input
             className="flex-1 p-1 rounded text-black"

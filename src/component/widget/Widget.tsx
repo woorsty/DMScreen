@@ -38,7 +38,7 @@ export abstract class Widget<
 
   public render() {
     return (
-      <div className="relative group bg-gray-800 p-2 rounded mx-auto">
+      <div className="relative group bg-gray-800 p-2 rounded mx-auto h-full w-full">
         {this.props.removable && (
           <button
             className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-700 hover:bg-red-600 text-white rounded p-1 text-xs"
