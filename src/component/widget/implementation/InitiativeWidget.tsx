@@ -74,10 +74,10 @@ export class InitiativeWidget extends Widget<
       currentIndex,
     } = this.state;
     return (
-      <div className="bg-gray-800 p-2 rounded w-full h-full flex flex-col">
-        <div className="mb-2 flex gap-1">
+      <div className="bg-gray-800 p-1 rounded w-full h-full flex flex-col min-w-0">
+        <div className="mb-2 flex gap-1 w-full min-w-0 overflow-hidden">
           <input
-            className="flex-1 p-1 rounded text-black"
+            className="basis-2/5 min-w-0 p-1 rounded text-black"
             type="text"
             placeholder="Name"
             value={nameInput}
@@ -87,7 +87,7 @@ export class InitiativeWidget extends Widget<
             }}
           />
           <input
-            className="w-16 p-1 rounded text-black"
+            className="basis-1/6 min-w-0 p-1 rounded text-black"
             type="number"
             placeholder="Init"
             value={initiativeInput}
@@ -97,7 +97,7 @@ export class InitiativeWidget extends Widget<
             }}
           />
           <input
-            className="w-16 p-1 rounded text-black"
+            className="basis-1/6 min-w-0 p-1 rounded text-black"
             type="number"
             placeholder="HP"
             value={currentHpInput}
@@ -107,7 +107,7 @@ export class InitiativeWidget extends Widget<
             }}
           />
           <input
-            className="w-16 p-1 rounded text-black"
+            className="basis-1/6 min-w-0 p-1 rounded text-black"
             type="number"
             placeholder="Max HP"
             value={maxHpInput}
@@ -117,8 +117,9 @@ export class InitiativeWidget extends Widget<
             }}
           />
           <button
-            className="bg-green-600 px-2 rounded"
+            className="bg-green-600 px-2 rounded flex-none"
             onClick={this.handleAdd}
+            style={{ minWidth: "2rem" }}
           >
             +
           </button>
@@ -127,7 +128,14 @@ export class InitiativeWidget extends Widget<
           {characters.length === 0 ? (
             <li className="text-gray-400 text-center">Keine Charaktere</li>
           ) : (
-            <table className="w-full text-left border-separate border-spacing-y-1">
+            <table className="w-full table-fixed text-left border-separate border-spacing-y-1">
+              <colgroup>
+                <col style={{ width: "30%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "15%" }} />
+              </colgroup>
               <thead>
                 <tr className="text-gray-300">
                   <th className="px-2 py-1">Name</th>

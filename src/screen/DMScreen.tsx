@@ -1,9 +1,10 @@
 import React, { Component, type JSX } from "react";
 import { EmptyWidget } from "../component/widget/implementation/EmptyWidget";
-import { InitiativeWidget } from "../component/widget/implementation/InitiativeWidget";
 import { DMScreenMenu } from "./menu/DMScreenMenu";
 import Gridlayout from "react-grid-layout";
 import { v4 as uuidv4 } from "uuid";
+import { WidgetType } from "../component/widget/WidgetType";
+import { WidgetRegistry } from "../component/widget/WidgetRegistry";
 
 interface WidgetData {
   key: string;
@@ -11,7 +12,7 @@ interface WidgetData {
   y: number;
   width: number;
   height: number;
-  component: JSX.Element;
+  type: WidgetType;
 }
 
 interface DMScreenProps {
@@ -35,23 +36,30 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
   public constructor(props: DMScreenProps) {
     super(props);
 
-    const { widgets, layout } = this.fillWithEmptyWidgets(
-      props.columns,
-      props.rows
-    );
     this.state = {
       columns: props.columns,
       rows: props.rows,
-      widgets,
+      widgets: [],
       menuOpen: false,
       isEditMode: false,
       containerHeight: 0,
-      layout,
+      layout: [],
     };
   }
 
   componentDidMount() {
+    const { widgets, layout } = this.fillWithEmptyWidgets(
+      this.props.columns,
+      this.props.rows
+    );
+
+    this.setState({
+      widgets,
+      layout,
+    });
+
     this.updateContainerHeight();
+
     window.addEventListener("resize", this.updateContainerHeight);
   }
 
@@ -80,16 +88,7 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
             y: y,
             width: 1,
             height: 1,
-            component: (
-              <EmptyWidget
-                id={`${x},${y}`}
-                x={x}
-                y={y}
-                width={1}
-                height={1}
-                onReplaceWidget={this.onReplaceWidget}
-              />
-            ),
+            type: WidgetType.Empty,
           });
         }
         layout.push({
@@ -104,13 +103,13 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
     return { widgets, layout };
   }
 
-  onReplaceWidget = (x: number, y: number, widget: JSX.Element) => {
+  onReplaceWidget = (x: number, y: number, widget: WidgetType) => {
     this.setState((prevState) => {
       const currentWidgets = prevState.widgets;
       const currentWidget = this.getWidgetFromList(x, y, currentWidgets);
 
       if (currentWidget) {
-        currentWidget.component = widget;
+        currentWidget.type = widget;
       }
 
       return { widgets: currentWidgets };
@@ -224,15 +223,30 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
         preventCollision={true}
         compactType={null}
       >
-        {this.state.widgets.map((widget) => (
-          <div
-            key={widget.key}
-            className="border border-gray-700 h-full w-full bg-gray-700"
-            style={{ margin: 0, padding: 0 }}
-          >
-            {widget.component}
-          </div>
-        ))}
+        {this.state.widgets.map((widget) => {
+          const entry = WidgetRegistry.find((w) => w.type === widget.type);
+          if (!entry) return null;
+          const WidgetComponent = entry.component();
+
+          return (
+            <div
+              key={widget.key}
+              className="border border-gray-700 h-full w-full bg-gray-700"
+              style={{ margin: 0, padding: 0 }}
+            >
+              <WidgetComponent
+                id={widget.key}
+                x={widget.x}
+                y={widget.y}
+                width={widget.width}
+                height={widget.height}
+                onReplaceWidget={this.onReplaceWidget}
+                removable={widget.type !== WidgetType.Empty}
+                isEditMode={this.state.isEditMode}
+              />
+            </div>
+          );
+        })}
       </Gridlayout>
     );
   }

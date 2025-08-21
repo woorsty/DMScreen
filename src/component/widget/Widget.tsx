@@ -1,4 +1,5 @@
 import React, { type JSX } from "react";
+import { WidgetType } from "./WidgetType";
 
 export type WidgetProps = {
   id: string;
@@ -7,7 +8,8 @@ export type WidgetProps = {
   width: number;
   height: number;
   removable?: boolean;
-  onReplaceWidget: (x: number, y: number, widget: JSX.Element) => void;
+  onReplaceWidget: (x: number, y: number, widget: WidgetType) => void;
+  isEditMode: boolean;
 };
 
 export type WidgetState = WidgetProps & {};
@@ -20,26 +22,13 @@ export abstract class Widget<
 
   private handleRemove = async () => {
     const { x, y, onReplaceWidget } = this.props;
-    const { EmptyWidget } = await import("./implementation/EmptyWidget");
-    onReplaceWidget(
-      x,
-      y,
-      <EmptyWidget
-        key={`${x},${y}`}
-        id={Date.now().toString() + x + y}
-        x={x}
-        y={y}
-        width={1}
-        height={1}
-        onReplaceWidget={onReplaceWidget}
-      />
-    );
+    onReplaceWidget(x, y, WidgetType.Empty);
   };
 
   public render() {
     return (
       <div className="relative group bg-gray-800 p-2 rounded mx-auto h-full w-full">
-        {this.props.removable && (
+        {this.props.removable && this.props.isEditMode && (
           <button
             className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-700 hover:bg-red-600 text-white rounded p-1 text-xs"
             title="Widget entfernen"
