@@ -1,0 +1,6 @@
+.border-active-edit-mode {
+  border-width: 2px !important;
+  border-color: #4a90e2 !important;
+  border-style: dashed !important;
+  /*cursor: grab;*/
+}

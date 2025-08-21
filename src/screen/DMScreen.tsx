@@ -4,6 +4,9 @@ import Gridlayout from "react-grid-layout";
 import { v4 as uuidv4 } from "uuid";
 import { WidgetType } from "../component/widget/WidgetType";
 import { WidgetRegistry } from "../component/widget/WidgetRegistry";
+import "./DMScreen.css";
+import { Direction } from "../model/Direction";
+import { EmptyWidget } from "../component/widget/implementation/EmptyWidget";
 
 interface WidgetData {
   key: string;
@@ -68,7 +71,7 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
     window.removeEventListener("resize", this.updateContainerSize);
   }
 
-  componentDidUpdate(prevProps: DMScreenProps, prevState: DMScreenState) {
+  componentDidUpdate(_prevProps: DMScreenProps, _prevState: DMScreenState) {
     this.updateContainerSize();
   }
 
@@ -215,6 +218,56 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
     }));
   }
 
+  handleWidgetBorderClick = (
+    e: React.MouseEvent<HTMLDivElement>,
+    widget: WidgetData,
+    direction: Direction
+  ) => {
+    e.stopPropagation();
+    console.log("widget rand geklickt: ", direction, widget);
+    const otherCoordinates: { x: number; y: number } = {
+      x: widget.x,
+      y: widget.y,
+    };
+    let newHeight = widget.height;
+    let newWidth = widget.width;
+    switch (direction) {
+      case Direction.Top:
+        otherCoordinates.y -= 1;
+        newHeight += 1;
+        break;
+      case Direction.Bottom:
+        otherCoordinates.y += 1;
+        newHeight += 1;
+        break;
+      case Direction.Left:
+        otherCoordinates.x -= 1;
+        newWidth += 1;
+        break;
+      case Direction.Right:
+        otherCoordinates.x += 1;
+        newWidth += 1;
+        break;
+    }
+
+    const otherWidget = this.getWidget(otherCoordinates.x, otherCoordinates.y);
+    if (otherWidget) {
+      const newWidgets = this.state.widgets.flatMap((w) => {
+        if (w.key === widget.key) {
+          w.height = newHeight;
+          w.width = newWidth;
+        }
+        if (w.key !== otherWidget.key) {
+          return w;
+        }
+        return [];
+      });
+      if (newWidgets) {
+        this.setState({ widgets: newWidgets });
+      }
+    }
+  };
+
   renderGrid(): React.ReactNode {
     const layout = this.getLayoutFromWidgets(this.state.widgets);
 
@@ -225,9 +278,10 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
         rowHeight={this.getRowHeight()}
         width={this.state.containerWidth}
         isDraggable={this.state.isEditMode}
-        isResizable={true}
+        isResizable={false}
         style={{ height: "100%" }}
         margin={[0, 0]}
+        draggableHandle=".drag-handle"
         containerPadding={[0, 0]}
         layout={layout}
         onLayoutChange={this.onLayoutChange}
@@ -242,9 +296,49 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
           return (
             <div
               key={widget.key}
-              className="border border-gray-700 h-full w-full bg-gray-700"
+              className={"border h-full w-full border-gray-700 bg-gray-700"}
               style={{ margin: 0, padding: 0 }}
             >
+              <div
+                className="drag-handle absolute top-0 left-0 w-full h-4 cursor-grab bg-transparent"
+                style={{ zIndex: 1 }}
+              />
+              {this.state.isEditMode && (
+                <>
+                  {/* Handle für den oberen Rand */}
+                  <div
+                    className="absolute top-0 left-0 w-full h-1 bg-transparent border-active-edit-mode"
+                    style={{ zIndex: 1 }}
+                    onClick={(e) =>
+                      this.handleWidgetBorderClick(e, widget, Direction.Top)
+                    }
+                  />
+                  {/* Handle für den unteren Rand */}
+                  <div
+                    className="absolute bottom-0 left-0 w-full h-1 bg-transparent border-active-edit-mode"
+                    style={{ zIndex: 1 }}
+                    onClick={(e) =>
+                      this.handleWidgetBorderClick(e, widget, Direction.Bottom)
+                    }
+                  />
+                  {/* Handle für den linken Rand */}
+                  <div
+                    className="absolute top-0 left-0 h-full w-1 bg-transparent border-active-edit-mode"
+                    style={{ zIndex: 1 }}
+                    onClick={(e) =>
+                      this.handleWidgetBorderClick(e, widget, Direction.Left)
+                    }
+                  />
+                  {/* Handle für den rechten Rand */}
+                  <div
+                    className="absolute top-0 right-0 h-full w-1 bg-transparent border-active-edit-mode"
+                    style={{ zIndex: 1 }}
+                    onClick={(e) =>
+                      this.handleWidgetBorderClick(e, widget, Direction.Right)
+                    }
+                  />
+                </>
+              )}
               <WidgetComponent
                 id={widget.key}
                 x={widget.x}
