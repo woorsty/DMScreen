@@ -1,5 +1,4 @@
-import React, { Component, type JSX } from "react";
-import { EmptyWidget } from "../component/widget/implementation/EmptyWidget";
+import React, { Component } from "react";
 import { DMScreenMenu } from "./menu/DMScreenMenu";
 import Gridlayout from "react-grid-layout";
 import { v4 as uuidv4 } from "uuid";
@@ -28,6 +27,7 @@ interface DMScreenState {
   menuOpen: boolean;
   isEditMode: boolean;
   containerHeight: number;
+  containerWidth: number;
 }
 
 export class DMScreen extends Component<DMScreenProps, DMScreenState> {
@@ -43,6 +43,7 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
       menuOpen: false,
       isEditMode: false,
       containerHeight: 0,
+      containerWidth: 0,
       layout: [],
     };
   }
@@ -58,17 +59,17 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
       layout,
     });
 
-    this.updateContainerHeight();
+    this.updateContainerSize();
 
-    window.addEventListener("resize", this.updateContainerHeight);
+    window.addEventListener("resize", this.updateContainerSize);
   }
 
   componentWillUnmount() {
-    window.removeEventListener("resize", this.updateContainerHeight);
+    window.removeEventListener("resize", this.updateContainerSize);
   }
 
   componentDidUpdate(prevProps: DMScreenProps, prevState: DMScreenState) {
-    this.updateContainerHeight();
+    this.updateContainerSize();
   }
 
   fillWithEmptyWidgets(columns: number, rows: number) {
@@ -163,12 +164,17 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
     }
   };
 
-  updateContainerHeight = () => {
+  updateContainerSize = () => {
     const container = this.gridContainerRef.current;
     if (container) {
-      const height = container.clientHeight;
-      if (height !== this.state.containerHeight) {
-        this.setState({ containerHeight: height });
+      if (
+        this.state.containerHeight !== container.clientHeight ||
+        this.state.containerWidth !== container.clientWidth
+      ) {
+        this.setState({
+          containerHeight: container.clientHeight,
+          containerWidth: container.clientWidth,
+        });
       }
     }
   };
@@ -176,6 +182,11 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
   getRowHeight() {
     if (!this.state.containerHeight) return 100;
     return this.state.containerHeight / this.state.rows;
+  }
+
+  getColumnWidth() {
+    if (!this.state.containerWidth) return 100;
+    return this.state.containerWidth / this.state.columns;
   }
 
   onLayoutChange = (newLayout: any[]) => {
@@ -212,9 +223,9 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
         className="layout"
         cols={this.state.columns}
         rowHeight={this.getRowHeight()}
-        width={window.screen.availWidth}
+        width={this.state.containerWidth}
         isDraggable={this.state.isEditMode}
-        isResizable={this.state.isEditMode}
+        isResizable={true}
         style={{ height: "100%" }}
         margin={[0, 0]}
         containerPadding={[0, 0]}

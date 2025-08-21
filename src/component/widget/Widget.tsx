@@ -20,7 +20,8 @@ export abstract class Widget<
 > extends React.Component<PROPS, STATE> {
   protected abstract renderContent: () => JSX.Element;
 
-  private handleRemove = async () => {
+  private handleRemove = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     const { x, y, onReplaceWidget } = this.props;
     onReplaceWidget(x, y, WidgetType.Empty);
   };
