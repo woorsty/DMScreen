@@ -125,7 +125,19 @@ export class DMScreen extends Component<DMScreenProps, DMScreenState> {
     y: number,
     widgets: WidgetData[]
   ): WidgetData | undefined {
-    return widgets.find((widget) => widget.x === x && widget.y === y);
+    let found: WidgetData | undefined;
+    widgets.forEach((widget) => {
+      if (
+        x < widget.x + widget.width &&
+        x >= widget.x &&
+        y < widget.y + widget.height &&
+        y >= widget.y
+      ) {
+        found = widget;
+      }
+    });
+
+    return found;
   }
 
   getWidget(x: number, y: number) {
